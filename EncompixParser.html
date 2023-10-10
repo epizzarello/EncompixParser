@@ -27,16 +27,21 @@
                     let nl = [
                     currentCustomer,
                     currentSalesperson,
-                    row[4],
-                    row[1],
-                    row[2],
-                    row[5],
-                    row[9],
-                    row[8],
-                    row[6],
-                    row[12],
-                    row[11]
+                    row[4],//Invoice #
+                    row[1],//Document Type
+                    row[2],//Job #
+                    row[5],//Invoice Date
+                    row[9],//Due Date
+                    row[8].replace(',',''),//Invoice Amount
+                    row[6],//Customer PO
+                    row[12].replace(',',''),//Amount Due
+                    row[11]//Discount
                     ];
+                    for(let c of nl) {
+                        if(c.includes(',')) {
+                            c = '"'+c+'"';
+                        }
+                    }
                     formattedData.push(nl);
                 }
 
