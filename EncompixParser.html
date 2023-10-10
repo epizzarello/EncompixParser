@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script type="module">
+            import { parse } from 'https://unpkg.com/@vanillaes/csv@3.0.1/index.js';
+            window.parse = parse;
+        </script>
+    </head>
+    <body>
+        <p>Click on the "Choose File" button to upload a file:</p>
+        <input id="fileUpload" type="file" onchange="fixFile()" /><br />
+        <p class="content"></p>
+    </body>
+    <script>
+        function formatData(txt) {
+            let formattedData = [];
+            let headers = ['Customer','Salesperson','Invoice #','Document Type','Job #','Invoice Date','Due Date','Invoice Amount','Customer PO','Amount Due','Discount'];
+            formattedData.push(headers);
+            let data = parse(txt);
+            let currentCustomer = '';
+            let currentSalesperson = '';
+            for(let row of data) {
+                if(row[0].startsWith('Customer')) {
+                    currentCustomer = row[1];
+                    currentSalesperson = row[7];
+                } else if(row[0].length==0) {
+                    let nl = [
+                    currentCustomer,
+                    currentSalesperson,
+                    row[4],
+                    row[1],
+                    row[2],
+                    row[5],
+                    row[9],
+                    row[8],
+                    row[6],
+                    row[12],
+                    row[11]
+                    ];
+                    formattedData.push(nl);
+                }
+
+            }
+            return formattedData;
+        }
+        function downloadCSV(data) {
+            const blob = new Blob([data],{type:'text/csv'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href',url);
+            let fileInput = document.getElementById('fileUpload');
+            a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
+            a.click();
+        }
+        function makeCSV(data) {
+            let csv = data.map((item) => {
+                var r = item;
+                return r.join(",");
+            }).join("\n");
+            return csv;
+        }
+        function fixFile() {
+            const content = document.querySelector(".content");
+            const [file] = document.querySelector("input[type=file]").files;
+            const reader = new FileReader();
+          
+            reader.addEventListener(
+              "load",
+              () => {
+                // this will then display a text file
+                //content.innerText = formatData(reader.result);
+                downloadCSV(makeCSV(formatData(reader.result)));
+              },
+              false,
+            );
+          
+            if (file) {
+              reader.readAsText(file);
+            }
+          }
+    </script>
+</html>
