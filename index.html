@@ -5,17 +5,61 @@
             import { parse } from 'https://unpkg.com/@vanillaes/csv@3.0.1/index.js';
             window.parse = parse;
         </script>
+        <style>
+            #modules {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+            }
+            .module {
+                display: flex;
+                flex-direction: column;
+            }
+        </style>
     </head>
     <body>
-        <h1>Encompix File Parser</h1>
-        <h3>Created by Edmund Pizzarello</h3>
+        <center><h1>Encompix File Parser</h1></center>
+        <center><h3>Created by Edmund Pizzarello</h3></center>
         <hr>
-        <p>Click on the "Choose File" button to upload a file:</p>
-        <input id="fileUpload" type="file" onchange="fixFile()" /><br />
-        <p class="content">The "fixed" file will automatically download. No data is stored.</p>
+        <div id="modules">
+            <div class="module">
+                <h4>Aged Accounts Receivable</h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="AARfileUpload" type="file" onchange="fixAARFile()" /><br />
+                <p class="content">The "fixed" file will automatically download. No data is stored.</p>
+            </div>
+            <div class="module">
+                <h4>Taxable Revenue Liability</h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="TRLfileUpload" type="file" onchange="fixTRLFile()" /><br />
+                <p class="content">The "fixed" file will automatically download. No data is stored.</p>
+            </div>
+        </div>
     </body>
     <script>
-        function formatData(txt) {
+        function formatTRLData(txt) {
+            let formattedData = [];
+            let headers = ['Tax Code','Customer Id','Customer Name','Invoice #','Invoice Date','Tax Rate','Gross Revenue','Taxable Revenue','Tax Liability'];
+            formattedData.push(headers);
+            let data = parse(txt);
+            for(let row of data) {
+                let nl = [
+                row[24],//tax code
+                row[26],//customer id
+                '"'+row[27]+'"',//customer name
+                row[29],//invoice #
+                row[30],//invoice date
+                row[31],//tax rate
+                row[32].replaceAll(",",""),//gross revenue
+                row[33].replaceAll(",",""),// taxable revenue
+                row[34].replaceAll(",","")//tax liability
+                ];
+                formattedData.push(nl);
+            }
+            return formattedData;
+        }
+        function formatAARData(txt) {
             let formattedData = [];
             let headers = ['Customer','Salesperson','Invoice #','Document Type','Job #','Invoice Date','Due Date','Invoice Amount','Customer PO','Amount Due','Discount'];
             formattedData.push(headers);
@@ -51,12 +95,21 @@
             }
             return formattedData;
         }
-        function downloadCSV(data) {
+        function downloadAARCSV(data) {
             const blob = new Blob([data],{type:'text/csv'});
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href',url);
-            let fileInput = document.getElementById('fileUpload');
+            let fileInput = document.getElementById('AARfileUpload');
+            a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
+            a.click();
+        }
+        function downloadTRLCSV(data) {
+            const blob = new Blob([data],{type:'text/csv'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href',url);
+            let fileInput = document.getElementById('TRLfileUpload');
             a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
             a.click();
         }
@@ -67,9 +120,9 @@
             }).join("\n");
             return csv;
         }
-        function fixFile() {
+        function fixAARFile() {
             const content = document.querySelector(".content");
-            const [file] = document.querySelector("input[type=file]").files;
+            const [file] = document.querySelector("input[type=file]#AARfileUpload").files;
             const reader = new FileReader();
           
             reader.addEventListener(
@@ -77,7 +130,7 @@
               () => {
                 // this will then display a text file
                 //content.innerText = formatData(reader.result);
-                downloadCSV(makeCSV(formatData(reader.result)));
+                downloadAARCSV(makeCSV(formatAARData(reader.result)));
               },
               false,
             );
@@ -86,5 +139,24 @@
               reader.readAsText(file);
             }
           }
+          function fixTRLFile() {
+              const content = document.querySelector(".content");
+              const [file] = document.querySelector("input[type=file]#TRLfileUpload").files;
+              const reader = new FileReader();
+            
+              reader.addEventListener(
+                "load",
+                () => {
+                  // this will then display a text file
+                  //content.innerText = formatData(reader.result);
+                  downloadTRLCSV(makeCSV(formatTRLData(reader.result)));
+                },
+                false,
+              );
+            
+              if (file) {
+                reader.readAsText(file);
+              }
+            }
     </script>
 </html>
