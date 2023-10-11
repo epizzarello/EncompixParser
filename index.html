@@ -35,9 +35,9 @@
                     row[2],//Job #
                     row[5],//Invoice Date
                     row[9],//Due Date
-                    row[8].replace(',',''),//Invoice Amount
+                    row[8].replaceAll(',',''),//Invoice Amount
                     row[6],//Customer PO
-                    row[12].replace(',',''),//Amount Due
+                    row[12].replaceAll(',',''),//Amount Due
                     row[11]//Discount
                     ];
                     for(let c of nl) {
