@@ -8,6 +8,10 @@
         </script>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <style>
+            :root {
+                --purple: rgb(85,26,139);
+                --light-purple: #AA8DC5;
+            }
             #modules {
                 display: flex;
                 flex-direction: row;
@@ -21,11 +25,49 @@
             .error {
                 color:red;
             }
+            #headerRow {
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            #headerRow > div {
+                display: flex;
+                flex-direction: column;
+                justify-content: space-evenly;
+                width: auto;
+                flex-grow: 1;
+                flex-shrink: 1;
+                align-items: center;
+            }
+            #github > a {
+                text-decoration: none;
+                font-weight: bold;
+                color: var(--purple);
+                border: 3px solid var(--purple);
+                padding: 2%;
+                border-radius: 25px;
+                text-align: center;
+                width: fit-content;
+                height: fit-content;
+                transition: background-color .5s, color .5s;
+            }
+            #github > a:hover {
+                background-color: var(--light-purple);
+                color: white;
+            }
         </style>
     </head>
     <body>
-        <center><h1>Encompix File Parser</h1></center>
-        <center><h3>Created by Edmund Pizzarello</h3></center>
+        <div id="headerRow">
+            <div></div>
+            <div id="header">
+                <center><h1>Encompix File Parser</h1></center>
+                <center><h3>Created by Edmund Pizzarello</h3></center>
+            </div>
+            <div id="github">
+                <a href="https://github.com/epizzarello/EncompixParser" target="_blank">GitHub</a>
+            </div>
+        </div>
         <hr>
         <div id="modules">
             <div class="module">
@@ -47,6 +89,13 @@
                 <p>Click on the "Choose File" button to upload a file:</p>
                 <input id="Labor1fileUpload" type="file" onchange="fixLabor1File()" /><br />
                 <p class="error" id="Labor1error">Please make sure to upload a CSV file.</p>
+                <p class="content">The "fixed" file will automatically download. No data is stored.</p>
+            </div>
+            <div class="module">
+                <h4>Labor Import Part 2</h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="Labor2fileUpload" type="file" onchange="fixLabor2File()" /><br />
+                <p class="error" id="Labor2error">Please make sure to upload a CSV file.</p>
                 <p class="content">The "fixed" file will automatically download. No data is stored.</p>
             </div>
         </div>
@@ -185,6 +234,94 @@
             ];
             return sheets;
         }
+        function formatLabor2Data(txt) {
+            let formattedData = [];
+            let headers = ['Trans Type','Work Date','Employee Id','Jobs','Wrk Cntr','Qty Complete','Time','Concurrent','Indirect Code','Detail','Rework','Rverse','Complete','NOTES'];
+            formattedData.push(headers);
+            let data = parse(txt);
+            for(let row of data) {
+                if(row[0].toLowerCase()=='trans type') {
+                    continue;
+                }
+                let nl = [
+                    row[0],
+                    row[1],
+                    '"'+row[2]+'"',
+                    row[3],
+                    row[4],
+                    0,
+                    row[5]
+                ];
+                nl[13] = '"'+(row[10].length > 0 ? row[10] : row[9]).replaceAll('"','""').replaceAll("’","'")+'"';
+                switch(row[4].toUpperCase()) {
+                    case 'INDFACMAIN':
+                        nl[8] = 'IND-Fac. Maint.';
+                        break;
+                    case 'INDMEET':
+                        nl[8] = 'IND-Meeting/Adm';
+                        break;
+                    case 'INDPTO':
+                        nl[8] = 'PTO';
+                        break;
+                    case 'INDSALES':
+                        nl[8] = 'IND-Sales/Quot';
+                        break;
+                    case 'INDTRAIN':
+                        nl[8] = 'IND-Training';
+                        break;
+                    case 'INDITSPPT':
+                        nl[8] = 'IT Support';
+                        break;
+                    case 'INDIRECT':
+                        nl[8] = 'IND';
+                        break;
+                    case 'IND360':
+                        nl[8] = 'IND-360';
+                        break;
+                    case 'INDMRKT':
+                        nl[8] = 'IND-Marketing';
+                        break;
+                    case 'INDPHONE':
+                        nl[8] = 'IND-PhoneSppt';
+                        break;
+                    case 'INDCAD':
+                        nl[8] = 'CAD Admin Sppt';
+                        break;
+                    default:
+                        nl[8] = '';
+                }
+                if(row[0].toUpperCase()=='I') {
+                    nl[4] = 'INDIRECT';
+                    if(row[3].toLowerCase()=='not defined') {
+                        nl[3] = '';
+                    }
+                }
+                if(row[4].toUpperCase().startsWith('REWORK')) {
+                    nl[10] = 'TRUE';
+                    nl[9] = row[4];
+                    nl[4] = 'ASSY';
+                } else {
+                    nl[10] = 'FALSE';
+                    nl[9] = '';
+                }
+                nl[2] = String(nl[2]);
+                while(nl[2].length < 4) {
+                    nl[2] = '0'+nl[2];
+                }
+                nl[7]='';
+                nl[11]='';
+                nl[12]='';
+                for(let col of nl) {
+                    if(typeof col == 'string') {
+                        if(col.includes(',') || col.includes('\r') || col.includes('\n')) {
+                            //col = '"'+col+'"';
+                        }
+                    }
+                }
+                formattedData.push(nl);
+            }
+            return formattedData;
+        }
         function formatTRLData(txt) {
             let formattedData = [];
             let headers = ['Tax Code','Customer Id','Customer Name','Invoice #','Invoice Date','Tax Rate','Gross Revenue','Taxable Revenue','Tax Liability'];
@@ -275,6 +412,15 @@
             })
             a.click();
         }
+        function downloadLabor2CSV(data) {
+            const blob = new Blob([data],{type:'text/csv'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href',url);
+            let fileInput = document.getElementById('Labor2fileUpload');
+            a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
+            a.click();
+        }
         function makeCSV(data) {
             let csv = data.map((item) => {
                 var r = item;
@@ -353,6 +499,31 @@
                 }
             } else {
                 $('#Labor1error').fadeIn();
+            }
+          }
+          function fixLabor2File() {
+            const content = document.querySelector(".content");
+            let filename = document.getElementById('Labor2fileUpload').files[0].name;
+            if(filename.toLowerCase().endsWith('.csv')) {
+                $('#Labor2error').fadeOut();
+                const [file] = document.querySelector("input[type=file]#Labor2fileUpload").files;
+                const reader = new FileReader();
+            
+                reader.addEventListener(
+                "load",
+                () => {
+                    // this will then display a text file
+                    //content.innerText = formatData(reader.result);
+                    downloadLabor2CSV(makeCSV(formatLabor2Data(reader.result)));
+                },
+                false,
+                );
+            
+                if (file) {
+                reader.readAsText(file);
+                }
+            } else {
+                $('#Labor2error').fadeIn();
             }
           }
     </script>
