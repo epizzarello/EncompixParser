@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/excellentexport@3.4.3/dist/excellentexport.min.js"></script>
         <script type="module">
             import { parse } from 'https://unpkg.com/@vanillaes/csv@3.0.1/index.js';
             window.parse = parse;
         </script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
         <style>
             #modules {
                 display: flex;
@@ -15,6 +17,9 @@
             .module {
                 display: flex;
                 flex-direction: column;
+            }
+            .error {
+                color:red;
             }
         </style>
     </head>
@@ -27,17 +32,159 @@
                 <h4>Aged Accounts Receivable</h4>
                 <p>Click on the "Choose File" button to upload a file:</p>
                 <input id="AARfileUpload" type="file" onchange="fixAARFile()" /><br />
+                <p class="error" id="AARerror">Please make sure to upload a CSV file.</p>
                 <p class="content">The "fixed" file will automatically download. No data is stored.</p>
             </div>
             <div class="module">
                 <h4>Taxable Revenue Liability</h4>
                 <p>Click on the "Choose File" button to upload a file:</p>
                 <input id="TRLfileUpload" type="file" onchange="fixTRLFile()" /><br />
+                <p class="error" id="TRLerror">Please make sure to upload a CSV file.</p>
+                <p class="content">The "fixed" file will automatically download. No data is stored.</p>
+            </div>
+            <div class="module">
+                <h4>Labor Import Part 1</h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="Labor1fileUpload" type="file" onchange="fixLabor1File()" /><br />
+                <p class="error" id="Labor1error">Please make sure to upload a CSV file.</p>
                 <p class="content">The "fixed" file will automatically download. No data is stored.</p>
             </div>
         </div>
     </body>
     <script>
+        $('.error').hide();
+        function getMostRecentSunday() {
+            let recentSunday = new Date();
+            recentSunday.setDate(recentSunday.getDate() - (recentSunday.getDay()));
+            return new Date(recentSunday.getFullYear(),recentSunday.getMonth(),recentSunday.getDate());
+        }
+        function getPriorMonday(sunday) {
+            return new Date(sunday.getFullYear(),sunday.getMonth(),sunday.getDate()-6);
+        }
+        function parseDate(datetxt) {
+            let dateArray = datetxt.split('/');
+            return new Date(Number(dateArray[2]),Number(dateArray[0])-1,Number(dateArray[1]));
+        }
+        function formatLabor1Data(txt) {
+            let data = parse(txt);
+            let itimewrwc = [];
+            let notdefinederrors = [];
+            let sales = [];
+            let intrnl = [];
+            let service = [];
+            let nojob = [];
+            let itimewjob = [];
+            let itimewrwcandjob = [];
+            let lastweek = [];
+            let sunday = getMostRecentSunday();
+            let monday = getPriorMonday(sunday);
+            for(let row of data) {
+                if(row[0]=='Trans Type') {
+                    //header row
+                    itimewrwc.push(row);
+                    notdefinederrors.push(row);
+                    sales.push(row);
+                    intrnl.push(row);
+                    service.push(row);
+                    nojob.push(row);
+                    itimewjob.push(row);
+                    itimewrwcandjob.push(row);
+                    lastweek.push(row);
+                    continue;
+                }
+                let rowdate = parseDate(row[1]);
+                if(row[5]==0 || rowdate > sunday || rowdate < monday) {
+                    continue;
+                } else if(row[0] == 'Not Defined' || row[4]=='Not Defined') {
+                    notdefinederrors.push(row);
+                } else if(row[4]=='MRKT' || row[4]=='APPS' || row[4]=='SALES') {
+                    if(row[3]=='Not Defined') {
+                        sales.push(row);
+                    } else {
+                        itimewjob.push(row);
+                    }
+                } else if(row[4]=='INTRNL') {
+                    if(row[3]=='Not Defined') {
+                        intrnl.push(row);
+                    } else {
+                        itimewjob.push(row);
+                    }
+                } else if(row[4]=='SERVICE') {
+                    if(row[3]=='Not Defined') {
+                        service.push(row);
+                    } else {
+                        itimewjob.push(row);
+                    }
+                } else if(row[0]=='R' && row[3]=='Not Defined') {
+                    nojob.push(row);
+                } else if(row[0]=='R' && row[4].startsWith('IND')) {
+                    itimewjob.push(row);
+                } else if(row[0]=='I' && row[3] != 'Not Defined') {
+                    itimewrwcandjob.push(row);
+                } else if(row[0]=='I' && !(row[4].startsWith('IND'))) {
+                    itimewrwc.push(row);
+                } else {
+                    lastweek.push(row);
+                }
+            }
+            let sheets = [
+            {
+                'name':'I Time w R WC',
+                'from': {
+                    'array':itimewrwc
+                }
+            },
+            {
+                'name':'Not Defined Errors',
+                'from': {
+                    'array':notdefinederrors
+                }
+            },
+            {
+                'name':'Sales',
+                'from': {
+                    'array':sales
+                }
+            },
+            {
+                'name':'Intrnl',
+                'from':{
+                    'array':intrnl
+                }
+            },
+            {
+                'name':'Service',
+                'from':{
+                    'array':service
+                }
+            },
+            {
+                'name':'No Job#',
+                'from':{
+                    'array':nojob
+                }
+            },
+            {
+                'name':'I Time w Job#',
+                'from':{
+                    'array':itimewjob
+                }
+            },
+            {
+                'name':'I time w R WC and Job#',
+                'from':{
+                    'array':itimewrwcandjob
+                }
+            },
+            {
+                'name':'Last Week',
+                'from':{
+                    'array':lastweek
+                }
+            }
+            ];
+            return sheets;
+        }
         function formatTRLData(txt) {
             let formattedData = [];
             let headers = ['Tax Code','Customer Id','Customer Name','Invoice #','Invoice Date','Tax Rate','Gross Revenue','Taxable Revenue','Tax Liability'];
@@ -113,6 +260,21 @@
             a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
             a.click();
         }
+        function downloadLabor1Excel(sheets) {
+            let fileInput = document.getElementById('Labor1fileUpload');
+            let filename = fileInput.files[0].name.replace(".csv","");
+            const a = document.createElement('a');
+            a.setAttribute('href','#');
+            a.setAttribute('download',filename+'.xlsx');
+            a.addEventListener("click",function(){
+                return ExcellentExport.convert({
+                    'anchor':this,
+                    'filename':filename,
+                    'format':'xlsx'
+                },sheets);
+            })
+            a.click();
+        }
         function makeCSV(data) {
             let csv = data.map((item) => {
                 var r = item;
@@ -122,41 +284,76 @@
         }
         function fixAARFile() {
             const content = document.querySelector(".content");
-            const [file] = document.querySelector("input[type=file]#AARfileUpload").files;
-            const reader = new FileReader();
-          
-            reader.addEventListener(
-              "load",
-              () => {
-                // this will then display a text file
-                //content.innerText = formatData(reader.result);
-                downloadAARCSV(makeCSV(formatAARData(reader.result)));
-              },
-              false,
-            );
-          
-            if (file) {
-              reader.readAsText(file);
+            let filename = document.getElementById('AARfileUpload').files[0].name;
+            if(filename.toLowerCase().endsWith('.csv')) {
+                $('#AARerror').fadeOut();
+                const [file] = document.querySelector("input[type=file]#AARfileUpload").files;
+                const reader = new FileReader();
+            
+                reader.addEventListener(
+                "load",
+                () => {
+                    // this will then display a text file
+                    //content.innerText = formatData(reader.result);
+                    downloadAARCSV(makeCSV(formatAARData(reader.result)));
+                },
+                false,
+                );
+            
+                if (file) {
+                reader.readAsText(file);
+                }
+            } else {
+                $('#AARerror').fadeIn();
             }
           }
           function fixTRLFile() {
-              const content = document.querySelector(".content");
-              const [file] = document.querySelector("input[type=file]#TRLfileUpload").files;
-              const reader = new FileReader();
-            
-              reader.addEventListener(
+            const content = document.querySelector(".content");
+            let filename = document.getElementById('TRLfileUpload').files[0].name;
+            if(filename.toLowerCase().endsWith('csv')) {
+                $('#TRLerror').fadeOut();
+                const [file] = document.querySelector("input[type=file]#TRLfileUpload").files;
+                const reader = new FileReader();
+                reader.addEventListener(
                 "load",
                 () => {
-                  // this will then display a text file
-                  //content.innerText = formatData(reader.result);
-                  downloadTRLCSV(makeCSV(formatTRLData(reader.result)));
+                    // this will then display a text file
+                    downloadTRLCSV(makeCSV(formatTRLData(reader.result)));
                 },
                 false,
-              );
+                );
             
-              if (file) {
+                if (file) {
                 reader.readAsText(file);
-              }
+                }
+            } else {
+                $('#TRLerror').fadeIn();
             }
+          }
+          function fixLabor1File() {
+            const content = document.querySelector(".content");
+            let filename = document.getElementById('Labor1fileUpload').files[0].name;
+            if(filename.toLowerCase().endsWith('.csv')) {
+                $('#Labor1error').fadeOut();
+                const [file] = document.querySelector("input[type=file]#Labor1fileUpload").files;
+                const reader = new FileReader();
+            
+                reader.addEventListener(
+                "load",
+                () => {
+                    // this will then display a text file
+                    //content.innerText = formatData(reader.result);
+                    downloadLabor1Excel(formatLabor1Data(reader.result));
+                },
+                false,
+                );
+            
+                if (file) {
+                reader.readAsText(file);
+                }
+            } else {
+                $('#Labor1error').fadeIn();
+            }
+          }
     </script>
 </html>
