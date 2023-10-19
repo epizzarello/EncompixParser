@@ -141,6 +141,7 @@
                     lastweek.push(row);
                     continue;
                 }
+                row[5] = Number(row[5]); //make the Paid Duration (hours) column numbers instead of text
                 let rowdate = parseDate(row[1]);
                 if(row[5]==0 || rowdate > sunday || rowdate < monday) {
                     continue;
