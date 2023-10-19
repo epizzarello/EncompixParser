@@ -247,12 +247,16 @@
                 let nl = [
                     row[0],
                     row[1],
-                    '"'+row[2]+'"',
+                    String(row[2]),
                     row[3],
                     row[4],
                     0,
                     row[5]
                 ];
+                while(nl[2].length < 4) {
+                    nl[2] = '0'+nl[2];
+                }
+                nl[2] = '"'+nl[2]+'"';
                 nl[13] = '"'+(row[10].length > 0 ? row[10] : row[9]).replaceAll('"','""').replaceAll("’","'")+'"';
                 switch(row[4].toUpperCase()) {
                     case 'INDFACMAIN':
