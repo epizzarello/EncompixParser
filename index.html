@@ -98,6 +98,13 @@
                 <p class="error" id="Labor2error">Please make sure to upload a CSV file.</p>
                 <p class="content">The "fixed" file will automatically download. No data is stored.</p>
             </div>
+            <div class="module">
+                <h4>Aged Accounts Payable</h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="AgedApFileUpload" type="file" onchange="fixAgedApFile()" /><br />
+                <p class="error" id="AgedAPerror">Please make sure to upload a CSV file.</p>
+                <p class="content">The "fixed" file will automatically download. No data is stored.<br />Remember to use the csv export, NOT the xls!</p>
+            </div>
         </div>
     </body>
     <script>
@@ -327,6 +334,32 @@
             }
             return formattedData;
         }
+        function formatAgedApData(txt) {
+            let formattedData = [];
+            let headers = ['Vendor','Voucher Type','Voucher #','PO #','Invoice #','Invoice Date','Due Date','Invoice Amount','Discount Date','Discount Amount','Amount Due','Age'];
+            formattedData.push(headers);
+            let data = parse(txt);
+            for(let row of data) {
+                if(row[41] != 0) {
+                    let nl = [
+                    '"'+row[29]+'"',
+                    '"'+row[40]+'"',
+                    '"'+row[41]+'"',
+                    '"'+row[42]+'"',
+                    '"'+row[43]+'"',
+                    row[44],
+                    row[45],
+                    row[46].replaceAll(",",""),
+                    row[47],
+                    row[48].replaceAll(",",""),
+                    row[49].replaceAll(",",""),
+                    row[50].replaceAll(",","")
+                    ];
+                    formattedData.push(nl);
+                }
+            }
+            return formattedData;
+        }
         function formatTRLData(txt) {
             let formattedData = [];
             let headers = ['Tax Code','Customer Id','Customer Name','Invoice #','Invoice Date','Tax Rate','Gross Revenue','Taxable Revenue','Tax Liability'];
@@ -402,6 +435,15 @@
             a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
             a.click();
         }
+        function downloadAgedAPCSV(data) {
+            const blob = new Blob([data],{type:'text/csv'});
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href',url);
+            let fileInput = document.getElementById('AgedApFileUpload');
+            a.setAttribute('download',fileInput.files[0].name.replace(".csv","-fixed.csv"));
+            a.click();
+        }
         function downloadLabor1Excel(sheets) {
             let fileInput = document.getElementById('Labor1fileUpload');
             let filename = fileInput.files[0].name.replace(".csv","");
@@ -458,6 +500,31 @@
                 $('#AARerror').fadeIn();
             }
           }
+          function fixAgedApFile() {
+              const content = document.querySelector(".content");
+              let filename = document.getElementById('AgedApFileUpload').files[0].name;
+              if(filename.toLowerCase().endsWith('.csv')) {
+                  $('#AgedAPerror').fadeOut();
+                  const [file] = document.querySelector("input[type=file]#AgedApFileUpload").files;
+                  const reader = new FileReader();
+              
+                  reader.addEventListener(
+                  "load",
+                  () => {
+                      // this will then display a text file
+                      //content.innerText = formatData(reader.result);
+                      downloadAgedAPCSV(makeCSV(formatAgedApData(reader.result)));
+                  },
+                  false,
+                  );
+              
+                  if (file) {
+                  reader.readAsText(file);
+                  }
+              } else {
+                  $('#AgedAPerror').fadeIn();
+              }
+            }
           function fixTRLFile() {
             const content = document.querySelector(".content");
             let filename = document.getElementById('TRLfileUpload').files[0].name;
