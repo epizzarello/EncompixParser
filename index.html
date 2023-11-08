@@ -340,7 +340,7 @@
             formattedData.push(headers);
             let data = parse(txt);
             for(let row of data) {
-                if(row[41] != 0) {
+                if(row[41] != 0 && row[59] == 0) {
                     let nl = [
                     '"'+row[29]+'"',
                     '"'+row[40]+'"',
