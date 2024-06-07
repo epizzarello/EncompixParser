@@ -132,6 +132,32 @@
             let itimewjob = [];
             let itimewrwcandjob = [];
             let lastweek = [];
+            let timewoldwc = [];
+            const oldWCs = ['IND-Bday',
+            'IND360',
+            'INDBEAREAV',
+            'INDBEREAV',
+            'INDCAD',
+            'INDFacMain',
+            'INDHOL',
+            'INDITSppt',
+            'INDMEET',
+            'INDMRKT',
+            'INDPhone',
+            'INDPTO',
+            'INDSALES',
+            'INDVACA',
+            'INTRNL',
+            'MRKT',
+            'PHONE',
+            'REWORK',
+            'Rework-ASSY',
+            'Rework-CustReq',
+            'Rework-ElecDesign',
+            'Rework-MechDesign',
+            'Rework-Pneumatic',
+            'Rework-Vend',
+            'SALES'];
             let sunday = getMostRecentSunday();
             let monday = getPriorMonday(sunday);
             for(let row of data) {
@@ -146,12 +172,15 @@
                     itimewjob.push(row);
                     itimewrwcandjob.push(row);
                     lastweek.push(row);
+                    timewoldwc.push(row);
                     continue;
                 }
                 row[5] = Number(row[5]); //make the Paid Duration (hours) column numbers instead of text
                 let rowdate = parseDate(row[1]);
                 if(row[5]==0 || rowdate > sunday || rowdate < monday) {
                     continue;
+                } else if(oldWCs.includes(row[4])) {
+                    timewoldwc.push(row);
                 } else if(row[0] == 'Not Defined' || row[4]=='Not Defined') {
                     notdefinederrors.push(row);
                 } else if(row[4]=='MRKT' || row[4]=='APPS' || row[4]=='SALES') {
@@ -237,6 +266,12 @@
                 'name':'Last Week',
                 'from':{
                     'array':lastweek
+                }
+            },
+            {
+                'name':'Time w Old WC',
+                'from':{
+                    'array':timewoldwc
                 }
             }
             ];
