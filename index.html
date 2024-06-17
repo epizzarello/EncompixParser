@@ -159,8 +159,6 @@
                 let rowdate = parseDate(row[1]);
                 if(row[5]==0 || rowdate > sunday || rowdate < monday) {
                     continue;
-                } else if(oldWCs.includes(row[4])) {
-                    timewoldwc.push(row);
                 } else if(row[0] == 'Not Defined' || row[4]=='Not Defined') {
                     notdefinederrors.push(row);
                 } else if(row[4]=='MRKT' || row[4]=='APPS' || row[4]=='SALES') {
@@ -189,6 +187,8 @@
                     itimewrwcandjob.push(row);
                 } else if(row[0]=='I' && !(row[4].startsWith('IND'))) {
                     itimewrwc.push(row);
+                } else if(oldWCs.includes(row[4])) {
+                    timewoldwc.push(row);
                 } else {
                     lastweek.push(row);
                 }
