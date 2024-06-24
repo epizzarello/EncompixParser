@@ -121,6 +121,15 @@
             let dateArray = datetxt.split('/');
             return new Date(Number(dateArray[2]),Number(dateArray[0])-1,Number(dateArray[1]));
         }
+        function parseDatetime(datetimetxt) {
+            let datetimeArray = datetimetxt.split(' ');
+            let dateArray = datetimeArray[0].split('/');
+            let timeArray = datetimeArray[1].split(':');
+            return new Date(Number(dateArray[2]),Number(dateArray[0])-1,Number(dateArray[1]),Number(timeArray[0]),Number(timeArray[1]));
+        }
+        function hoursBetweenDates(beginning,finish) {
+            return (finish - beginning) / (60*60*1000);
+        }
         function formatLabor1Data(txt) {
             let data = parse(txt);
             let itimewrwc = [];
@@ -163,7 +172,19 @@
                 }
                 row[colHeadMapping['Paid Duration (hours)']] = Number(row[colHeadMapping['Paid Duration (hours)']]); //make the Paid Duration (hours) column numbers instead of text
                 let rowdate = parseDate(row[colHeadMapping['Work Date']]);
-                if(row[colHeadMapping['Paid Duration (hours)']]==0 || rowdate > sunday || rowdate < monday) {
+                if(row[colHeadMapping['Paid Duration (hours)']]==0) {
+                    if(!Object.hasOwn(colHeadMapping,'Punch In Time (Rounded)') || !Object.hasOwn(colHeadMapping,'Punch Out Time (Rounded)') || !Object.hasOwn(colHeadMapping,'Punch In Type') || !Object.hasOwn(colHeadMapping,'Punch Out Type')) {
+                        continue;
+                    }
+                    if(row[colHeadMapping['Punch In Type']]=='Start Lunch' || row[colHeadMapping['Punch In Type']]=='Non-Work' || row[colHeadMapping['Punch In Type']]=='Clock Out') {
+                        continue;
+                    }
+                    if(row[colHeadMapping['Punch In Time (Rounded)']]==row[colHeadMapping['Punch Out Time (Rounded)']] || row[colHeadMapping['Punch In Time (Rounded)']]=='' || row[colHeadMapping['Punch Out Time (Rounded)']]=='') {
+                        continue;
+                    }
+                    row[colHeadMapping['Paid Duration (hours)']] = hoursBetweenDates(parseDatetime(row[colHeadMapping['Punch In Time (Rounded)']]),parseDatetime(row[colHeadMapping['Punch Out Time (Rounded)']]));
+                }
+                if(rowdate > sunday || rowdate < monday) {
                     continue;
                 } else if(row[colHeadMapping['Trans Type']] == 'Not Defined' || row[colHeadMapping['Wrk Cntr']]=='Not Defined') {
                     notdefinederrors.push(row);
