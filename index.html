@@ -140,8 +140,10 @@
             'Rework-Pneumatic','Rework-Vend','SALES','TRAVEL','TRAVELE','WATERJET'];
             let sunday = getMostRecentSunday();
             let monday = getPriorMonday(sunday);
+            let firstRow = true;
+            let colHeadMapping = {};
             for(let row of data) {
-                if(row[0]=='Trans Type') {
+                if(firstRow) {
                     //header row
                     itimewrwc.push(row);
                     notdefinederrors.push(row);
@@ -153,41 +155,45 @@
                     itimewrwcandjob.push(row);
                     lastweek.push(row);
                     timewoldwc.push(row);
+                    firstRow = false;
+                    for(let i=0; i<row.length; i++) {
+                        colHeadMapping[row[i]] = i;
+                    }
                     continue;
                 }
-                row[5] = Number(row[5]); //make the Paid Duration (hours) column numbers instead of text
-                let rowdate = parseDate(row[1]);
-                if(row[5]==0 || rowdate > sunday || rowdate < monday) {
+                row[colHeadMapping['Paid Duration (hours)']] = Number(row[colHeadMapping['Paid Duration (hours)']]); //make the Paid Duration (hours) column numbers instead of text
+                let rowdate = parseDate(row[colHeadMapping['Work Date']]);
+                if(row[colHeadMapping['Paid Duration (hours)']]==0 || rowdate > sunday || rowdate < monday) {
                     continue;
-                } else if(row[0] == 'Not Defined' || row[4]=='Not Defined') {
+                } else if(row[colHeadMapping['Trans Type']] == 'Not Defined' || row[colHeadMapping['Wrk Cntr']]=='Not Defined') {
                     notdefinederrors.push(row);
-                } else if(row[4]=='MRKT' || row[4]=='APPS' || row[4]=='SALES') {
-                    if(row[3]=='Not Defined') {
+                } else if(row[colHeadMapping['Wrk Cntr']]=='MRKT' || row[colHeadMapping['Wrk Cntr']]=='APPS' || row[colHeadMapping['Wrk Cntr']]=='SALES') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
                         sales.push(row);
                     } else {
                         itimewjob.push(row);
                     }
-                } else if(row[4]=='INTRNL') {
-                    if(row[3]=='Not Defined') {
+                } else if(row[colHeadMapping['Wrk Cntr']]=='INTRNL') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
                         intrnl.push(row);
                     } else {
                         itimewjob.push(row);
                     }
-                } else if(row[4]=='SERVICE') {
-                    if(row[3]=='Not Defined') {
+                } else if(row[colHeadMapping['Wrk Cntr']]=='SERVICE') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
                         service.push(row);
                     } else {
                         itimewjob.push(row);
                     }
-                } else if(row[0]=='R' && row[3]=='Not Defined') {
+                } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Jobs']]=='Not Defined') {
                     nojob.push(row);
-                } else if(row[0]=='R' && row[4].startsWith('IND')) {
+                } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Wrk Cntr']].startsWith('IND')) {
                     itimewjob.push(row);
-                } else if(row[0]=='I' && row[3] != 'Not Defined') {
+                } else if(row[colHeadMapping['Trans Type']]=='I' && row[colHeadMapping['Jobs']] != 'Not Defined') {
                     itimewrwcandjob.push(row);
-                } else if(row[0]=='I' && !(row[4].startsWith('IND'))) {
+                } else if(row[colHeadMapping['Trans Type']]=='I' && !(row[colHeadMapping['Wrk Cntr']].startsWith('IND'))) {
                     itimewrwc.push(row);
-                } else if(oldWCs.includes(row[4])) {
+                } else if(oldWCs.includes(row[colHeadMapping['Wrk Cntr']])) {
                     timewoldwc.push(row);
                 } else {
                     lastweek.push(row);
