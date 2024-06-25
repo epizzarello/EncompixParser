@@ -153,21 +153,36 @@
             let colHeadMapping = {};
             for(let row of data) {
                 if(firstRow) {
-                    //header row
-                    itimewrwc.push(row);
-                    notdefinederrors.push(row);
-                    sales.push(row);
-                    intrnl.push(row);
-                    service.push(row);
-                    nojob.push(row);
-                    itimewjob.push(row);
-                    itimewrwcandjob.push(row);
-                    lastweek.push(row);
-                    timewoldwc.push(row);
                     firstRow = false;
                     for(let i=0; i<row.length; i++) {
                         colHeadMapping[row[i]] = i;
                     }
+                    let headers = [];
+                    headers.push(row[colHeadMapping['Trans Type']]);
+                    headers.push(row[colHeadMapping['Work Date']]);
+                    headers.push(row[colHeadMapping['Employee Id']]);
+                    headers.push(row[colHeadMapping['Jobs']]);
+                    headers.push(row[colHeadMapping['Wrk Cntr']]);
+                    headers.push(row[colHeadMapping['Paid Duration (hours)']]);
+                    headers.push(row[colHeadMapping['Display Name']]);
+                    headers.push(row[colHeadMapping['Company']]);
+                    headers.push(row[colHeadMapping['Jobs Name']]);
+                    headers.push(row[colHeadMapping['Employee Notes']]);
+                    headers.push(row[colHeadMapping['Supervisor Notes']]);
+                    //header row
+                    lastweek.push(JSON.parse(JSON.stringify(headers)));
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        headers.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwc.push(headers);
+                    notdefinederrors.push(headers);
+                    sales.push(headers);
+                    intrnl.push(headers);
+                    service.push(headers);
+                    nojob.push(headers);
+                    itimewjob.push(headers);
+                    itimewrwcandjob.push(headers);
+                    timewoldwc.push(headers);
                     continue;
                 }
                 row[colHeadMapping['Paid Duration (hours)']] = Number(row[colHeadMapping['Paid Duration (hours)']]); //make the Paid Duration (hours) column numbers instead of text
@@ -184,40 +199,88 @@
                     }
                     row[colHeadMapping['Paid Duration (hours)']] = hoursBetweenDates(parseDatetime(row[colHeadMapping['Punch In Time (Rounded)']]),parseDatetime(row[colHeadMapping['Punch Out Time (Rounded)']]));
                 }
+                rowWithLessColumns = [];
+                rowWithLessColumns.push(row[colHeadMapping['Trans Type']]);
+                rowWithLessColumns.push(row[colHeadMapping['Work Date']]);
+                rowWithLessColumns.push(row[colHeadMapping['Employee Id']]);
+                rowWithLessColumns.push(row[colHeadMapping['Jobs']]);
+                rowWithLessColumns.push(row[colHeadMapping['Wrk Cntr']]);
+                rowWithLessColumns.push(row[colHeadMapping['Paid Duration (hours)']]);
+                rowWithLessColumns.push(row[colHeadMapping['Display Name']]);
+                rowWithLessColumns.push(row[colHeadMapping['Company']]);
+                rowWithLessColumns.push(row[colHeadMapping['Jobs Name']]);
+                rowWithLessColumns.push(row[colHeadMapping['Employee Notes']]);
+                rowWithLessColumns.push(row[colHeadMapping['Supervisor Notes']]);
                 if(rowdate > sunday || rowdate < monday) {
                     continue;
                 } else if(row[colHeadMapping['Trans Type']] == 'Not Defined' || row[colHeadMapping['Wrk Cntr']]=='Not Defined') {
-                    notdefinederrors.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    notdefinederrors.push(rowWithLessColumns);
                 } else if(row[colHeadMapping['Wrk Cntr']]=='MRKT' || row[colHeadMapping['Wrk Cntr']]=='APPS' || row[colHeadMapping['Wrk Cntr']]=='SALES') {
                     if(row[colHeadMapping['Jobs']]=='Not Defined') {
-                        sales.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        sales.push(rowWithLessColumns);
                     } else {
-                        itimewjob.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
                     }
                 } else if(row[colHeadMapping['Wrk Cntr']]=='INTRNL') {
                     if(row[colHeadMapping['Jobs']]=='Not Defined') {
-                        intrnl.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        intrnl.push(rowWithLessColumns);
                     } else {
-                        itimewjob.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
                     }
                 } else if(row[colHeadMapping['Wrk Cntr']]=='SERVICE') {
                     if(row[colHeadMapping['Jobs']]=='Not Defined') {
-                        service.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        service.push(rowWithLessColumns);
                     } else {
-                        itimewjob.push(row);
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
                     }
                 } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Jobs']]=='Not Defined') {
-                    nojob.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    nojob.push(rowWithLessColumns);
                 } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Wrk Cntr']].startsWith('IND')) {
-                    itimewjob.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewjob.push(rowWithLessColumns);
                 } else if(row[colHeadMapping['Trans Type']]=='I' && row[colHeadMapping['Jobs']] != 'Not Defined') {
-                    itimewrwcandjob.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwcandjob.push(rowWithLessColumns);
                 } else if(row[colHeadMapping['Trans Type']]=='I' && !(row[colHeadMapping['Wrk Cntr']].startsWith('IND'))) {
-                    itimewrwc.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwc.push(rowWithLessColumns);
                 } else if(oldWCs.includes(row[colHeadMapping['Wrk Cntr']])) {
-                    timewoldwc.push(row);
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    timewoldwc.push(rowWithLessColumns);
                 } else {
-                    lastweek.push(row);
+                    lastweek.push(rowWithLessColumns);
                 }
             }
             let sheets = [
