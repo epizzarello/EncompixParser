@@ -137,6 +137,7 @@
             let sales = [];
             let intrnl = [];
             let service = [];
+            let ae = [];
             let nojob = [];
             let itimewjob = [];
             let itimewrwcandjob = [];
@@ -179,6 +180,7 @@
                     sales.push(headers);
                     intrnl.push(headers);
                     service.push(headers);
+                    ae.push(headers);
                     nojob.push(headers);
                     itimewjob.push(headers);
                     itimewrwcandjob.push(headers);
@@ -254,6 +256,18 @@
                         }
                         itimewjob.push(rowWithLessColumns);
                     }
+                } else if(row[colHeadMapping['Wrk Cntr']]=='AE') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        ae.push(rowWithLessColumns);
+                    } else {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
+                    }
                 } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Jobs']]=='Not Defined') {
                     if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
                         rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
@@ -312,6 +326,12 @@
                 'name':'Service',
                 'from':{
                     'array':service
+                }
+            },
+            {
+                'name':'AE',
+                'from':{
+                    'array':ae
                 }
             },
             {
