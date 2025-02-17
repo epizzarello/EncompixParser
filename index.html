@@ -103,6 +103,13 @@
                 <p class="content">The "fixed" file will automatically download. No data is stored.</p>
             </div>
             <div class="module">
+                <h4>Labor Import Part 1 <i>Wrike</i></h4>
+                <p>Click on the "Choose File" button to upload a file:</p>
+                <input id="Labor1WrikefileUpload" type="file" onchange="fixLabor1FileWrike()" /><br />
+                <p class="error" id="Labor1Wrikeerror">Please make sure to upload a CSV file.</p>
+                <p class="content">The two "fixed" files will automatically download. No data is stored.</p>
+            </div>
+            <div class="module">
                 <h4>Labor Import Part 2</h4>
                 <p>Click on the "Choose File" button to upload a file:</p>
                 <input id="Labor2fileUpload" type="file" onchange="fixLabor2File()" /><br />
@@ -619,6 +626,256 @@
             ];
             return sheets;
         }
+        function formatLabor1WrikeData(txt,wrikeBoolean) {
+            const wrikeApprovers = ['Brewer, Darwin',
+                                    'Travis, David',
+                                    'Petermann, William',
+                                    'Kenyon, Jason',
+                                    'Ayers, Kevin',
+                                    'Andracki, Richard',
+                                    'Speciale, Ryan',
+                                    'Billings, Scott',
+                                    'Barnard, Thomas',
+                                    'Smith, Wayne'];
+            let data = parse(txt);
+            let itimewrwc = [];
+            let notdefinederrors = [];
+            let sales = [];
+            let intrnl = [];
+            let service = [];
+            let ae = [];
+            let nojob = [];
+            let itimewjob = [];
+            let itimewrwcandjob = [];
+            let lastweek = [];
+            let timewoldwc = [];
+            const oldWCs = ['APPS','ASSY','ENG-M','ENG-PM','FAB','IND-Bday','IND360','INDBEAREAV','INDBEREAV',
+            'INDCAD','INDFacMain','INDHOL','INDITSppt','INDMEET','INDMRKT','INDPhone','INDPTO','INDSALES',
+            'INDVACA','INSTALL','INSTALLE','INSTALLS','INTRNL','MACH','MELE-CIN','MRKT','PHONE','PROGE',
+            'PROGRAM','REWORK','Rework-ASSY','Rework-CustReq','Rework-ElecDesign','Rework-MechDesign',
+            'Rework-Pneumatic','Rework-Vend','SALES','TRAVEL','TRAVELE','WATERJET'];
+            let sunday = getMostRecentSunday();
+            let monday = getPriorMonday(sunday);
+            let firstRow = true;
+            let colHeadMapping = {};
+            for(let row of data) {
+                if(firstRow) {
+                    firstRow = false;
+                    for(let i=0; i<row.length; i++) {
+                        colHeadMapping[row[i]] = i;
+                    }
+                    let headers = [];
+                    headers.push(row[colHeadMapping['Trans Type']]);
+                    headers.push(row[colHeadMapping['Work Date']]);
+                    headers.push(row[colHeadMapping['Employee Id']]);
+                    headers.push(row[colHeadMapping['Jobs']]);
+                    headers.push(row[colHeadMapping['Wrk Cntr']]);
+                    headers.push(row[colHeadMapping['Paid Duration (hours)']]);
+                    headers.push(row[colHeadMapping['Display Name']]);
+                    headers.push(row[colHeadMapping['Company']]);
+                    headers.push(row[colHeadMapping['Jobs Name']]);
+                    headers.push(row[colHeadMapping['Employee Notes']]);
+                    headers.push(row[colHeadMapping['Supervisor Notes']]);
+                    //header row
+                    lastweek.push(JSON.parse(JSON.stringify(headers)));
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        headers.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwc.push(headers);
+                    notdefinederrors.push(headers);
+                    sales.push(headers);
+                    intrnl.push(headers);
+                    service.push(headers);
+                    ae.push(headers);
+                    nojob.push(headers);
+                    itimewjob.push(headers);
+                    itimewrwcandjob.push(headers);
+                    timewoldwc.push(headers);
+                    continue;
+                }
+                if(wrikeBoolean != wrikeApprovers.includes(row[colHeadMapping["Supervisor's Name (Last, First)"]])) {
+                    continue;
+                }
+                row[colHeadMapping['Paid Duration (hours)']] = Number(row[colHeadMapping['Paid Duration (hours)']]); //make the Paid Duration (hours) column numbers instead of text
+                let rowdate = parseDate(row[colHeadMapping['Work Date']]);
+                if(row[colHeadMapping['Paid Duration (hours)']]==0) {
+                    if(!Object.hasOwn(colHeadMapping,'Punch In Time (Rounded)') || !Object.hasOwn(colHeadMapping,'Punch Out Time (Rounded)') || !Object.hasOwn(colHeadMapping,'Punch In Type') || !Object.hasOwn(colHeadMapping,'Punch Out Type')) {
+                        continue;
+                    }
+                    if(row[colHeadMapping['Punch In Type']]=='Start Lunch' || row[colHeadMapping['Punch In Type']]=='Non-Work' || row[colHeadMapping['Punch In Type']]=='Clock Out') {
+                        continue;
+                    }
+                    if(row[colHeadMapping['Punch In Time (Rounded)']]==row[colHeadMapping['Punch Out Time (Rounded)']] || row[colHeadMapping['Punch In Time (Rounded)']]=='' || row[colHeadMapping['Punch Out Time (Rounded)']]=='') {
+                        continue;
+                    }
+                    row[colHeadMapping['Paid Duration (hours)']] = hoursBetweenDates(parseDatetime(row[colHeadMapping['Punch In Time (Rounded)']]),parseDatetime(row[colHeadMapping['Punch Out Time (Rounded)']]));
+                }
+                rowWithLessColumns = [];
+                rowWithLessColumns.push(row[colHeadMapping['Trans Type']]);
+                rowWithLessColumns.push(row[colHeadMapping['Work Date']]);
+                rowWithLessColumns.push(row[colHeadMapping['Employee Id']]);
+                rowWithLessColumns.push(row[colHeadMapping['Jobs']]);
+                rowWithLessColumns.push(row[colHeadMapping['Wrk Cntr']]);
+                rowWithLessColumns.push(row[colHeadMapping['Paid Duration (hours)']]);
+                rowWithLessColumns.push(row[colHeadMapping['Display Name']]);
+                rowWithLessColumns.push(row[colHeadMapping['Company']]);
+                rowWithLessColumns.push(row[colHeadMapping['Jobs Name']]);
+                rowWithLessColumns.push(row[colHeadMapping['Employee Notes']]);
+                rowWithLessColumns.push(row[colHeadMapping['Supervisor Notes']]);
+                if(rowdate > sunday || rowdate < monday) {
+                    continue;
+                } else if(row[colHeadMapping['Trans Type']] == 'Not Defined' || row[colHeadMapping['Wrk Cntr']]=='Not Defined') {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    notdefinederrors.push(rowWithLessColumns);
+                } else if(row[colHeadMapping['Wrk Cntr']]=='MRKT' || row[colHeadMapping['Wrk Cntr']]=='APPS' || row[colHeadMapping['Wrk Cntr']]=='SALES') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        sales.push(rowWithLessColumns);
+                    } else {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
+                    }
+                } else if(row[colHeadMapping['Wrk Cntr']]=='INTRNL') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        intrnl.push(rowWithLessColumns);
+                    } else {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
+                    }
+                } else if(row[colHeadMapping['Wrk Cntr']]=='SERVICE') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        service.push(rowWithLessColumns);
+                    } else {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
+                    }
+                } else if(row[colHeadMapping['Wrk Cntr']]=='AE') {
+                    if(row[colHeadMapping['Jobs']]=='Not Defined') {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        ae.push(rowWithLessColumns);
+                    } else {
+                        if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                            rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                        }
+                        itimewjob.push(rowWithLessColumns);
+                    }
+                } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Jobs']]=='Not Defined') {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    nojob.push(rowWithLessColumns);
+                } else if(row[colHeadMapping['Trans Type']]=='R' && row[colHeadMapping['Wrk Cntr']].startsWith('IND')) {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewjob.push(rowWithLessColumns);
+                } else if(row[colHeadMapping['Trans Type']]=='I' && row[colHeadMapping['Jobs']] != 'Not Defined') {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwcandjob.push(rowWithLessColumns);
+                } else if(row[colHeadMapping['Trans Type']]=='I' && !(row[colHeadMapping['Wrk Cntr']].startsWith('IND'))) {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    itimewrwc.push(rowWithLessColumns);
+                } else if(oldWCs.includes(row[colHeadMapping['Wrk Cntr']])) {
+                    if(Object.hasOwn(colHeadMapping,"Supervisor's Name (Last, First)")) {
+                        rowWithLessColumns.push(row[colHeadMapping["Supervisor's Name (Last, First)"]]);
+                    }
+                    timewoldwc.push(rowWithLessColumns);
+                } else {
+                    lastweek.push(rowWithLessColumns);
+                }
+            }
+            let sheets = [
+            {
+                'name':'I Time w R WC',
+                'from': {
+                    'array':itimewrwc
+                }
+            },
+            {
+                'name':'Not Defined Errors',
+                'from': {
+                    'array':notdefinederrors
+                }
+            },
+            {
+                'name':'Intrnl',
+                'from':{
+                    'array':intrnl
+                }
+            },
+            {
+                'name':'No Job#',
+                'from':{
+                    'array':nojob
+                }
+            },
+            {
+                'name':'I Time w Job#',
+                'from':{
+                    'array':itimewjob
+                }
+            },
+            {
+                'name':'I time w R WC and Job#',
+                'from':{
+                    'array':itimewrwcandjob
+                }
+            },
+            {
+                'name':'Time w Old WC',
+                'from':{
+                    'array':timewoldwc
+                }
+            },
+            {
+                'name':'Last Week',
+                'from':{
+                    'array':lastweek
+                }
+            },
+            {
+                'name':'Sales',
+                'from': {
+                    'array':sales
+                }
+            },
+            {
+                'name':'Service',
+                'from':{
+                    'array':service
+                }
+            },
+            {
+                'name':'AE',
+                'from':{
+                    'array':ae
+                }
+            }
+            ];
+            return sheets;
+        }
         function formatLabor2Data(txt) {
             let formattedData = [];
             let headers = ['Trans Type','Work Date','Employee Id','Jobs','Wrk Cntr','Qty Complete','Time','Concurrent','Indirect Code','Detail','Rework','Rverse','Complete','NOTES'];
@@ -860,6 +1117,22 @@
             })
             a.click();
         }
+        function downloadLabor1WrikeExcel(sheets,wrikeBoolean) {
+            let fileInput = document.getElementById('Labor1WrikefileUpload');
+            let filename = fileInput.files[0].name.replace(".csv","");
+            filename += (wrikeBoolean ? '_Wrike' : '');
+            const a = document.createElement('a');
+            a.setAttribute('href','#');
+            a.setAttribute('download',filename+'.xlsx');
+            a.addEventListener("click",function(){
+                return ExcellentExport.convert({
+                    'anchor':this,
+                    'filename':filename,
+                    'format':'xlsx'
+                },sheets);
+            })
+            a.click();
+        }
         function downloadLabor2CSV(data) {
             const blob = new Blob([data],{type:'text/csv'});
             const url = window.URL.createObjectURL(blob);
@@ -999,6 +1272,32 @@
                 }
             } else {
                 $('#Labor1Customerror').fadeIn();
+            }
+          }
+          function fixLabor1FileWrike() {
+            const content = document.querySelector(".content");
+            let filename = document.getElementById('Labor1WrikefileUpload').files[0].name;
+            if(filename.toLowerCase().endsWith('.csv')) {
+                $('#Labor1Wrikeerror').fadeOut();
+                const [file] = document.querySelector("input[type=file]#Labor1WrikefileUpload").files;
+                const reader = new FileReader();
+            
+                reader.addEventListener(
+                "load",
+                () => {
+                    // this will then display a text file
+                    //content.innerText = formatData(reader.result);
+                    downloadLabor1WrikeExcel(formatLabor1WrikeData(reader.result,true),true);
+                    downloadLabor1WrikeExcel(formatLabor1WrikeData(reader.result,false),false);
+                },
+                false,
+                );
+            
+                if (file) {
+                reader.readAsText(file);
+                }
+            } else {
+                $('#Labor1error').fadeIn();
             }
           }
           function fixLabor2File() {
